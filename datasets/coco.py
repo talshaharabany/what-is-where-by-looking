@@ -99,14 +99,14 @@ class ImageLoader(torch.utils.data.Dataset):
 
 
 def get_coco_dataset(args):
-    datadir = r'/path_to_data/coco/coco'
+    datadir = args['data_path']
     transform_train, transform_test = get_flicker_transform(args)
     ds_train = ImageLoader(datadir, split='train', transform=transform_train)
     return ds_train
 
 
 def get_coco_test_dataset(args):
-    datadir = r'/path_to_data/coco/coco'
+    datadir = args['data_path']
     transform_train, transform_test = get_flicker_transform(args)
     ds_test = ImageLoader(datadir, split='val', transform=transform_test)
     return ds_test

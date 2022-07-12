@@ -41,7 +41,8 @@ def load_blip_img(raw_image):
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
         transforms.ToTensor(),
-        transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))
+        transforms.Normalize((0.48145466, 0.4578275, 0.40821073),
+                             (0.26862954, 0.26130258, 0.27577711))
     ])
     image = transform(raw_image).unsqueeze(0).to(device)
     return image
@@ -131,7 +132,7 @@ def inference_wwbl(ds, model, clip_model, text_generator, idx, ss, args, predict
     return predictions
 
 
-def inference_bbox(ds, model, blip_model, clip_model, epoch, args):
+def inference_bbox(ds, model, clip_model, epoch, args):
     pbar = tqdm(ds)
     cnt_overall = 0
     cnt_correct = 0
@@ -143,20 +144,12 @@ def inference_bbox(ds, model, blip_model, clip_model, epoch, args):
             continue
         real_imgs = real_imgs.cuda()
         size = [int(size[0]), int(size[1])]
-        if args['task'] == "flicker" or args['task'] == "vg_train" or args['task'] == "coco":
+        if args['dataset'] == "flicker" or args['task'] == "vg_train" or args['task'] == "coco":
             for sen in meta.keys():
                 item = meta[sen]
                 title, bbox = no_tuple(item['sentences']), item['bbox']
-                if bool(int(args['is_blip'])):
-                    text_blip_token = blip_model.tokenizer(title, padding='max_length', truncation=True, max_length=35,
-                                                           return_tensors="pt").to('cuda')
-                    text_output = blip_model.text_encoder(text_blip_token.data['input_ids'],
-                                                          attention_mask=text_blip_token.data['attention_mask'],
-                                                          return_dict=True, mode='text')
-                    z_text = F.normalize(blip_model.text_proj(text_output.last_hidden_state[:, 0, :]), dim=-1).detach()
-                else:
-                    text = clip.tokenize(title).to('cuda')
-                    z_text = norm_z(clip_model.encode_text(text))
+                text = clip.tokenize(title).to('cuda')
+                z_text = norm_z(clip_model.encode_text(text))
                 curr_image = real_imgs.repeat(z_text.shape[0], 1, 1, 1)
                 heatmap = model(curr_image, z_text)
                 heatmap = heatmap.mean(dim=0).squeeze().detach().clone().cpu().numpy()
@@ -171,16 +164,8 @@ def inference_bbox(ds, model, blip_model, clip_model, epoch, args):
             for item in list(meta.values()):
                 text.append('image of ' + item['sentences'][0])
                 bboxes.append(item['bbox'])
-            if bool(int(args['is_blip'])):
-                text_blip_token = blip_model.tokenizer(text, padding='max_length', truncation=True, max_length=35,
-                                                       return_tensors="pt").to('cuda')
-                text_output = blip_model.text_encoder(text_blip_token.data['input_ids'],
-                                                      attention_mask=text_blip_token.data['attention_mask'],
-                                                      return_dict=True, mode='text')
-                z_text = F.normalize(blip_model.text_proj(text_output.last_hidden_state[:, 0, :]), dim=-1).detach()
-            else:
-                text = clip.tokenize(text).to('cuda')
-                z_text = norm_z(clip_model.encode_text(text))
+            text = clip.tokenize(text).to('cuda')
+            z_text = norm_z(clip_model.encode_text(text))
             curr_image = real_imgs.repeat(z_text.shape[0], 1, 1, 1)
             with torch.no_grad():
                 heatmaps = model(curr_image, z_text)
@@ -197,6 +182,7 @@ def inference_bbox(ds, model, blip_model, clip_model, epoch, args):
         prnt = 'bbox_correctness:{:.2f}; hit_correctness:{:.2f}; att_correctness:{:.2f}'.\
             format(bbox_correctness, hit_correctness, att_correctness)
         pbar.set_description(prnt)
+    return hit_correctness
 
 
 def inference_clip(ds, clip_model, args):
@@ -210,7 +196,7 @@ def inference_clip(ds, clip_model, args):
             continue
         real_imgs = real_imgs.cuda()
         size = [int(size[0]), int(size[1])]
-        if args['task'] == "flicker" or args['task'] == "vg_train" or args['task'] == "coco":
+        if args['dataset'] == "flicker" or args['task'] == "vg_train" or args['task'] == "coco":
             for sen in meta.keys():
                 item = meta[sen]
                 title, bbox = no_tuple(item['sentences']), item['bbox']
@@ -233,7 +219,6 @@ def inference_clip(ds, clip_model, args):
             text_tokens = clip.tokenize(text).to('cuda')
             curr_image = real_imgs.repeat(text_tokens.shape[0], 1, 1, 1)
             index = np.cumsum(np.ones(text_tokens.shape[0])).astype(np.uint8) - 1
-            # heatmaps = interpret_batch(curr_image, text_tokens, clip_model, 'cuda', index=index, ground=True)
             heatmaps = interpret_new(curr_image, text_tokens, clip_model, 'cuda')
             for k, heatmap in enumerate(heatmaps):
                 heatmap = heatmap.mean(dim=0).squeeze().detach().clone().cpu().numpy().astype(np.float)
@@ -269,22 +254,17 @@ def main(args=None):
                                      num_workers=int(args['nW']),
                                      shuffle=False,
                                      drop_last=False)
-    if bool(int(args['is_blip'])):
-        model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_retrieval_coco.pth'
-        blip_model = blip_itm(pretrained=model_url, image_size=int(args['Isize']), vit='base')
-        blip_model.eval().cuda()
-    else:
-        blip_model = None
-    if args['task'] == 'flicker' or args['task'] == 'refit':
-        if args['clip_eval']:
-            inference_clip(ds, clip_model, args)
-        else:
-            inference_bbox(ds, model.eval(), blip_model, clip_model, 0, args)
-    elif args['task'] == 'vg':
-        if args['clip_eval']:
-            inference_clip(ds, clip_model, args)
-        else:
-            inference_bbox(ds, model.eval(), blip_model, clip_model, 0, args)
+    if args['task'] == 'grounding':
+        if args['dataset'] == 'flicker' or args['dataset'] == 'refit':
+            if args['clip_eval']:
+                inference_clip(ds, clip_model, args)
+            else:
+                inference_bbox(ds, model.eval(), clip_model, 0, args)
+        elif args['dataset'] == 'vg':
+            if args['clip_eval']:
+                inference_clip(ds, clip_model, args)
+            else:
+                inference_bbox(ds, model.eval(), clip_model, 0, args)
     elif args['task'] == 'app':
         from BLIP.models.blip import blip_decoder
         model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth'
@@ -319,28 +299,26 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument('-nW', '--nW', default=0, help='number of workers', required=False)
-    parser.add_argument('-backbone', '--backbone', default='vgg', help='number of workers', required=False)
-    parser.add_argument('-order_ae', '--order_ae', default=16, help='order of the backbone - ae', required=False)
-    parser.add_argument('-task', '--task', default='flicker', help='dataset task', required=False)
+    parser.add_argument('-task', '--task', default='grounding', help='dataset task', required=False)
     parser.add_argument('-th', '--th', default=0.1, help='evaluation th', required=False)
     parser.add_argument('-nC', '--nC', default=200, help='number of classes', required=False)
     parser.add_argument('-Isize', '--Isize', default=304, help='image size', required=False)
     parser.add_argument('-pretrained', '--pretrained', default=False, help='pretrined models', required=False)
-    parser.add_argument('-path_ae', '--path_ae', default=190, help='ae folder path', required=False)
+    parser.add_argument('-path_ae', '--path_ae', default=22, help='ae folder path', required=False)
     parser.add_argument('-clip_eval', '--clip_eval', default=0, help='ae folder path', required=False)
     parser.add_argument('-data_path', '--data_path',
                         default='/path_to_data/cars', help='data set path', required=False)
+    parser.add_argument('-val_path', '--val_path', default='', help='data set path', required=False)
     parser.add_argument('--start', type=int, default=0, help='ae folder path', required=False)
     parser.add_argument('--end', type=int, default=1000, help='ae folder path', required=False)
     parser.add_argument('--cluster_threshold', type=float, default=0.85, help='ae folder path', required=False)
     parser.add_argument('--cluster_min_size', type=int, default=2, help='ae folder path', required=False)
     parser.add_argument('--save_prediction', type=int, default=1, help='ae folder path', required=False)
-    parser.add_argument('-dataset', '--dataset', default='flicker', help='dataset task', required=False) # flicker / refit / vg
+    parser.add_argument('-dataset', '--dataset', default='flicker', help='dataset task', required=False)
     parser.add_argument('-img_path', '--img_path', default=1, help='dataset task', required=False)
-    parser.add_argument('-is_blip', '--is_blip', default='1', help='dataset task', required=False)
     args = vars(parser.parse_args())
 
-    args['path_best'] = os.path.join('/path_to_data/weakly_two_images/results', 'gpu' + str(args['path_ae']),
+    args['path_best'] = os.path.join('results', 'gpu' + str(args['path_ae']),
                                      'net_best.pth')
     args['clip_eval'] = bool(int(args['clip_eval']))
     main(args=args)

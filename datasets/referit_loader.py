@@ -59,7 +59,7 @@ class ImageLoader(torch.utils.data.Dataset):
 
 
 def get_refit_test_dataset(args):
-    datadir = r'/path_to_data/coco/RefIt'
+    datadir = args['val_path']
     transform_train, transform_test = get_flicker_transform(args)
     ds_test = ImageLoader(datadir, split='test', transform=transform_test)
     return ds_test

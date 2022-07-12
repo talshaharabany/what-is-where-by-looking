@@ -139,7 +139,7 @@ def area_bbox(bbox):
 
 
 def get_flicker_dataset(args):
-    datadir = r'/path_to_data/coco/flicker'
+    datadir = args['val_path']
     transform_train, transform_test = get_flicker_transform(args)
     ds_test = ImageLoader(datadir, split='val', transform=transform_test)
     ds_train = ImageLoader(datadir, split='train', transform=transform_train)
@@ -148,7 +148,7 @@ def get_flicker_dataset(args):
 
 def get_flicker1K_dataset(args):
     img_path = bool(int(args['img_path']))
-    datadir = r'/path_to_data/coco/flicker'
+    datadir = args['val_path']
     transform_train, transform_test = get_flicker_transform(args)
     ds_test = ImageLoader(datadir, split='test', transform=transform_test, img_path=img_path)
     return ds_test

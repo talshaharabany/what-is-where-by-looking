@@ -374,7 +374,7 @@ def interpret_new(images, texts, model, device):
     for i, blk in enumerate(image_attn_blocks):
         if i < 11:
           continue
-        grad = torch.autograd.grad(one_hot, [blk.attn_probs], retain_graph=True)[0].detach()
+        grad = torch.autograd.grad(one_hot, [blk.attn_probs], retain_graph=False)[0].detach()
         cam = blk.attn_probs.detach()
         cam = cam.reshape(-1, cam.shape[-1], cam.shape[-1])
         grad = grad.reshape(-1, grad.shape[-1], grad.shape[-1])

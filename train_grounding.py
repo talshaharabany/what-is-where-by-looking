@@ -45,35 +45,24 @@ def gen_step(optimizer_G, clip_model, real_imgs, text, model, criterion, args):
     model.to('cuda:' + str(real_imgs.get_device()))
     device = "cuda" if torch.cuda.is_available() else "cpu"
     text_pos = text[:, :, 0]
-    # text_neg = text[:, :, 1]
     z_t = norm_z(clip_model.encode_text(text_pos))
-
-    # index = np.cumsum(np.ones(text.shape[0])).astype(np.uint8) - 1
     real_imgs_224 = F.interpolate(real_imgs, size=(224, 224), mode="bilinear", align_corners=True)
     cam = interpret_new(real_imgs_224.detach(), text_pos.detach(), clip_model, device).detach().clone().float()
-    # cam = interpret_batch(real_imgs_224, text_pos, clip_model, device, index=index, ground=True).detach().clone().float()
     cam = F.interpolate(cam, size=(int(args['Isize']), int(args['Isize'])), mode="bilinear", align_corners=True)
-
     M = model(real_imgs, z_t)
-
     clip_cam_loss = F.mse_loss(M, cam)
-    # clip_cam_loss = 1 - ((M*cam).sum(dim=(1, 2, 3)) / cam.sum(dim=(1, 2, 3))).mean() +\
-    #                 (((1 - M)*cam).sum(dim=(1, 2, 3)) / cam.sum(dim=(1, 2, 3))).mean()
     M = F.interpolate(M, size=(224, 224), mode="bilinear", align_corners=True)
     z_fr = norm_z(clip_model.encode_image(real_imgs_224 * M))
     z_bg = norm_z(clip_model.encode_image(real_imgs_224 * (1 - M)))
-
     regularization = M.mean()
     fr_loss = (1 - (z_fr @ z_t.T)).mean()
     bg_loss = torch.abs(z_bg @ z_t.T).mean()
-
     loss = float(args['w3']) * fr_loss + \
            float(args['w0']) * regularization +\
            float(args['w1']) * clip_cam_loss +\
            float(args['w2']) * bg_loss.mean()
     loss.backward()
     optimizer_G.step()
-
     return loss.item(), 0
 
 
@@ -89,10 +78,7 @@ def train(ds, model, clip_model, optimizer_G, args):
     for i, inputs in enumerate(pbar):
         real_imgs = inputs[0].cuda()
         text_pos = inputs[1]
-        # text_neg = inputs[2]
         text_pos_token = clip.tokenize(text_pos).to('cuda').unsqueeze(dim=2)
-        # text_neg_token = clip.tokenize(text_neg).to('cuda').unsqueeze(dim=2)
-        # text_token = torch.cat((text_pos_token, text_neg_token), dim=2)
         loss, tplt_loss = gen_step(optimizer_G, clip_model, real_imgs, text_pos_token, model, criterion, args)
         loss_list.append(loss)
         pbar.set_description('(train) :: loss {loss:.4f}'.format(loss=np.mean(loss_list)))
@@ -161,7 +147,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument('-lr', '--learning_rate', default=0.0012, help='learning_rate', required=False)
-    parser.add_argument('-bs', '--Batch_size', default=8, help='batch_size', required=False)
+    parser.add_argument('-bs', '--Batch_size', default=32, help='batch_size', required=False)
     parser.add_argument('-epoches', '--epoches', default=5000, help='number of epoches', required=False)
     parser.add_argument('-nW', '--nW', default=0, help='number of workers', required=False)
     parser.add_argument('-nW_eval', '--nW_eval', default=0, help='number of workers', required=False)
@@ -173,10 +159,10 @@ if __name__ == '__main__':
     parser.add_argument('-nC', '--nC', default=200, help='number of classes', required=False)
     parser.add_argument('-th', '--th', default=0.1, help='evaluation th', required=False)
     parser.add_argument('-temp', '--temp', default=1, help='pretrined models', required=False)
-    parser.add_argument('-w0', '--w0', default=0.25, help='pretrined models', required=False)
+    parser.add_argument('-w0', '--w0', default=1, help='pretrined models', required=False)
     parser.add_argument('-w1', '--w1', default=4, help='pretrined models', required=False)
-    parser.add_argument('-w2', '--w2', default=0.5, help='pretrined models', required=False)
-    parser.add_argument('-w3', '--w3', default=0.25, help='pretrined models', required=False)
+    parser.add_argument('-w2', '--w2', default=1, help='pretrined models', required=False)
+    parser.add_argument('-w3', '--w3', default=1, help='pretrined models', required=False)
     parser.add_argument('-M', '--M', default=0.9, help='pretrined models', required=False)
     parser.add_argument('-prob', '--prob', default=10, help='pretrined models', required=False)
     parser.add_argument('-step_size', '--step_size', default=20, help='pretrined models', required=False)
@@ -184,9 +170,11 @@ if __name__ == '__main__':
     parser.add_argument('-resume', '--resume', default=False, help='pretrined models', required=False)
     parser.add_argument('-resume_folder', '--resume_folder', default='41', help='pretrined models', required=False)
     parser.add_argument('-pretrained', '--pretrained', default=False, help='pretrined models', required=False)
-    parser.add_argument('-img_path', '--img_path', default=False, help='pretrined models', required=False)
+    parser.add_argument('-img_path', '--img_path', default=True, help='pretrined models', required=False)
     parser.add_argument('-data_path', '--data_path',
-                        default='/path_to_data/CUB/CUB_200_2011', help='data set path', required=False)
+                        default='/media/media1/talshah/coco/VG', help='data set path', required=False)
+    parser.add_argument('-val_path', '--val_path',
+                        default=r'/media/media1/talshah/coco/flicker', help='data set path', required=False)
     args = vars(parser.parse_args())
     folder = open_folder('results')
     Isize = str(args['Isize'])
