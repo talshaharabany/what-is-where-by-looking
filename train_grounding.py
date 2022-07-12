@@ -155,6 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('-order_ae', '--order_ae', default=16, help='order of the backbone - ae', required=False)
     parser.add_argument('-backbone', '--backbone', default='vgg', help='order of the backbone - ae', required=False)
     parser.add_argument('-task', '--task', default='vg_train', help='dataset task', required=False)
+    parser.add_argument('-dataset', '--dataset', default='flicker', help='dataset task', required=False)
     parser.add_argument('-Isize', '--Isize', default=304, help='image size', required=False)
     parser.add_argument('-nC', '--nC', default=200, help='number of classes', required=False)
     parser.add_argument('-th', '--th', default=0.1, help='evaluation th', required=False)
