@@ -50,13 +50,21 @@ python wwbl_algo1_point_metric.py -nW 1 -predictions_path YY -val_path /path_to/
   <img src="pics/pic3.PNG" width="800">
 </p>
 
-### Results  
+### Phrase Grounding Results - Point Accuracy Metric
 
 | Method | Backbone | VG(VGtrained/COCO) | Flicker(VGtrained/COCO) | ReferIt(VGtrained/COCO)  |  
 | :---: |  :---:  |  :---:  |  :---:  |  :---:  |  
 | Baseline | Random | 11.15 | 27.24 | 24.30 | 
 | Baseline | Center | 20.55 | 47.40 | 30.30 | 
-| **ours** | **CLIP+VGG** |**62.31/59.09** | **75.63/75.43** | **65.95/61.03 ** | 
+| GAE | CLIP | 54.72 | 72.47 | 56.76 | 
+| FCVC | VGG |-/14.03 | -/29.03 | -/33.52 | 
+| VGLS | VGG |24.40/- | -/- | -/- | 
+| TD | Inception-2 | 19.31/- | 42.40/- | 31.97/- | 
+| SSS | VGG | 30.03/- | 49.10/- | 39.98/- | 
+| MG | BiLSTM+VGG | 50.18/46.99 | 57.91/53.29 | 62.76/47.89 | 
+| MG | ELMo+VGG | 48.76/47.94 | 60.08/61.66 | 60.01/47.52 | 
+| GbS | VGG | 53.40/52.00 | 70.48/72.60 | 59.44/56.10 | 
+| **ours** | **CLIP+VGG** |**62.31/59.09** | **75.63/75.43** | **65.95/61.03** | 
 
 
 <p align="center">
