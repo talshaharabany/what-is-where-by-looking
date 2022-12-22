@@ -50,6 +50,15 @@ python wwbl_algo1_point_metric.py -nW 1 -predictions_path YY -val_path /path_to/
   <img src="pics/pic3.PNG" width="800">
 </p>
 
+### Results  
+
+| Method | Backbone | (VGtrained) VG Flicker ReferIt  | (COCO) VG Flicker ReferIt| 
+| :---: |  :---:  |  :---:  | 
+| Baseline | Random | 11.15 27.24 24.30 | 11.15 27.24 24.30 | 
+| Baseline | Center | 20.55 47.40 30.30 | 20.55 47.40 30.30 | 
+| **ours** | **CLIP+VGG** |**62.31 75.63 65.95**  | **59.09 75.43 61.03** | 
+
+
 <p align="center">
   <img src="pics/pic4.PNG" width="800">
 </p>
