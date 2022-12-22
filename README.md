@@ -1,12 +1,12 @@
 # What is Where by Looking: Weakly-Supervised Open-World Phrase-Grounding without Text Inputs
 <p align="center">
-  <img src="pics/pic1.jpg" width="800">
+  <img src="pics/pic1.PNG" width="800">
 </p>
 - Paper : [link](https://arxiv.org/abs/2206.09358)
 - Demo : [link](https://replicate.com/talshaharabany/what-is-where-by-looking)
 
 <p align="center">
-  <img src="pics/pic2.jpg" width="800">
+  <img src="pics/pic2.PNG" width="800">
 </p>
 
 ### Get Started
@@ -45,9 +45,9 @@ python wwbl_algo1_point_metric.py -nW 1 -predictions_path YY -val_path /path_to/
 ```
 
 <p align="center">
-  <img src="pics/pic3.jpg" width="800">
+  <img src="pics/pic3.PNG" width="800">
 </p>
 
 <p align="center">
-  <img src="pics/pic4.jpg" width="800">
+  <img src="pics/pic4.PNG" width="800">
 </p>
