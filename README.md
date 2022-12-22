@@ -2,7 +2,9 @@
 <p align="center">
   <img src="pics/pic1.PNG" width="800">
 </p>
+
 - Paper : [link](https://arxiv.org/abs/2206.09358)
+
 - Demo : [link](https://replicate.com/talshaharabany/what-is-where-by-looking)
 
 <p align="center">
