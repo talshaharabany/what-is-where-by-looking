@@ -1,4 +1,4 @@
-# What is Where by Looking: Weakly-Supervised Open-World Phrase-Grounding without Text Inputs
+# What is Where by Looking: Weakly-Supervised Open-World Phrase-Grounding without Text Inputs - NIPS 22'
 <p align="center">
   <img src="pics/pic1.PNG" width="800">
 </p>
@@ -51,7 +51,8 @@ python wwbl_algo1_point_metric.py -nW 1 -predictions_path YY -val_path /path_to/
 </p>
 
 ### Phrase Grounding Results - Point Accuracy Metric
-
+[COCO weights]https://drive.google.com/drive/u/1/folders/1Ky42CNplmZj8zVpf8n4-CIpitOh9ffzp
+[VG weights]https://drive.google.com/drive/u/1/folders/1hz9InUVaUVCe3Eq90GoK1O3JH4i1VCwr
 | Method | Backbone | VG(VGtrained/COCO) | Flicker(VGtrained/COCO) | ReferIt(VGtrained/COCO)  |  
 | :---: |  :---:  |  :---:  |  :---:  |  :---:  |  
 | Baseline | Random | 11.15 | 27.24 | 24.30 | 
