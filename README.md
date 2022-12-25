@@ -7,6 +7,8 @@
 
 - Demo : [link](https://replicate.com/talshaharabany/what-is-where-by-looking)
 
+- Video : [link](https://neurips.cc/virtual/2022/poster/54981)
+
 <p align="center">
   <img src="pics/pic2.PNG" width="800">
 </p>
